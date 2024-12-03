@@ -2,6 +2,10 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class HistorianHysteria {
 
@@ -88,5 +92,33 @@ public class HistorianHysteria {
       lastDiff = currentDiff;
     }
     return true;
+  }
+
+  public static long mullItOver(String filePath) {
+      long sum = 0;
+    try(BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+      return br.lines()
+          .map(HistorianHysteria::findSumInLine)
+          .reduce(sum, Long::sum);
+    } catch (IOException e) {
+      e.printStackTrace();
+      return -1;
+    }
+  }
+
+  private static long findSumInLine(String line) {
+    long sum = 0;
+    Matcher matcher = Pattern.compile("mul\\([1-9]{1,3},[1-9]{1,3}\\)").matcher(line);
+    while (matcher.find()) {
+      System.out.println(matcher.group());
+      sum += Arrays.stream(matcher.group()
+          .replace("mul(", "")
+          .replace(")", "")
+          .split(","))
+          .mapToLong(Long::parseLong)
+          .reduce(1, (a, b) -> a * b);
+    }
+    System.out.println("findSumInLine: " + sum);
+    return sum;
   }
 }

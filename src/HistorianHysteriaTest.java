@@ -18,4 +18,10 @@ class HistorianHysteriaTest {
   void computeNumberOfSafeLevels() {
     HistorianHysteria.computeNumberOfSafeLevels("resources/puzzle_input_day_1_task_2");
   }
+
+  @Test
+  void mullItOver() {
+    long computed = HistorianHysteria.mullItOver("resources/puzzle_input_day_2_task_1_test");
+    assertEquals(161, computed);
+  }
 }
