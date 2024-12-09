@@ -43,4 +43,15 @@ class HistorianHysteriaTest {
         "Computed sum: " + computedSum);
     assertTrue(endTime - startTime < 5000);
   }
+
+  @ParameterizedTest
+  @CsvSource({"1", "2", "4", "8", "16", "32", "64", "128", "256", "512", "1024"})
+  void bridgeRepairBiiigInputTakesUnderFiveSeconds(int threadNumber) {
+    long startTime = System.currentTimeMillis();
+    long computedSum = HistorianHysteria.bridgeRepair("resources/puzzle_input_day_7_task_1_big_input", threadNumber);
+    long endTime = System.currentTimeMillis();
+    System.out.println("bridgeRepair using " + threadNumber + " thread(s) has taken " + (endTime - startTime) + "ms. " +
+        "Computed sum: " + computedSum);
+    assertTrue(endTime - startTime < 5000);
+  }
 }
