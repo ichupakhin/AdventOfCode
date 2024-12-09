@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -95,15 +97,98 @@ public class HistorianHysteria {
   }
 
   public static long mullItOver(String filePath) {
-      long sum = 0;
     try(BufferedReader br = new BufferedReader(new FileReader(filePath))) {
-      return br.lines()
-          .map(HistorianHysteria::findSumInLine)
-          .reduce(sum, Long::sum);
+      return findSumInLine(br
+          .lines()
+          .reduce("", (a, b) -> a + b));
     } catch (IOException e) {
       e.printStackTrace();
       return -1;
     }
+  }
+
+  public static long bridgeRepair(String filePath, int threadNumber) {
+    AtomicLong sum = new AtomicLong(0);
+    try(BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+      List<String> lines = new ArrayList<>();
+      br.lines().forEach(lines::add);
+      List<Thread> threads = getThreads(threadNumber, lines, sum);
+      for (Thread thread : threads) {
+          thread.join();
+      }
+    } catch (IOException e) {
+      e.printStackTrace();
+      return -1;
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+
+    return sum.get();
+  }
+
+  private static List<Thread> getThreads(int threadNumber, List<String> lines, AtomicLong sum) {
+    int linesPerThread = lines.size() / threadNumber;
+    List<Thread> threads = new ArrayList<>();
+    for (int i = 0; i < threadNumber; i++) {
+      int start = i * linesPerThread;
+      int end = (i + 1) * linesPerThread;
+      if (i == threadNumber - 1) {
+        end = lines.size();
+      }
+      int finalEnd = end;
+      Thread thread = new Thread(() -> {
+        for (int j = start; j < finalEnd; j++) {
+          sum.addAndGet(testEquation(lines.get(j)));
+        }
+      });
+      threads.add(thread);
+      thread.start();
+    }
+    return threads;
+  }
+
+  private static long testEquation(String equation) {
+    if (equation == null || equation.isEmpty()) {
+      return 0;
+    }
+    String[] splitOnColon = equation.split(":");
+    if(splitOnColon.length != 2) {
+      return 0;
+    }
+    long expectedResult = Long.parseLong(splitOnColon[0]);
+    int[] numbersToTest = Arrays.stream(splitOnColon[1].trim()
+        .split(" "))
+        .mapToInt(Integer::parseInt).toArray();
+    if(numbersToTest.length < 2) {
+      return 0;
+    }
+    int numberOfPossibleOperatorCombinations = (int) Math.pow(2, numbersToTest.length - 1);
+    return testEquationRecursive(numbersToTest, expectedResult, numberOfPossibleOperatorCombinations, 1);
+  }
+
+  private static long testEquationRecursive(int[] numbersToTest,
+                                           long expectedResult,
+                                           int numberOfPossibleOperatorCombinations,
+                                           int currentOperatorCombination) {
+      if(numberOfPossibleOperatorCombinations < currentOperatorCombination) {
+        return 0;
+      }
+      else {
+        long computedResult = numbersToTest[0];
+        for (int i = 1; i < numbersToTest.length; i++) {
+          if((currentOperatorCombination & (1 << (i - 1))) != 0) {
+            computedResult += numbersToTest[i];
+          }
+          else {
+            computedResult *= numbersToTest[i];
+          }
+        }
+        if(computedResult == expectedResult) {
+          return expectedResult;
+        }
+        else return testEquationRecursive(numbersToTest, expectedResult, numberOfPossibleOperatorCombinations,
+            currentOperatorCombination + 1);
+      }
   }
 
   private static long findSumInLine(String line) {
